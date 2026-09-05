@@ -1,0 +1,14 @@
+{ pkgs }:
+
+with pkgs;
+[
+  kubectl
+  kubectx
+  # The attribute is `kubernetes-helm`; a bare `helm` does not resolve.
+  kubernetes-helm
+  kustomize
+  k9s
+  kubent
+  argocd
+  cue
+]

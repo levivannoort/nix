@@ -1,0 +1,7 @@
+disabled = [
+  # Grouping `boot.loader` with `boot.initrd.*` hides which options are
+  # hardware-facing; the flat form reads better in host files.
+  "repeated_keys",
+  # `{ ... }:` documents "this is a NixOS/darwin module" better than `_:`.
+  "empty_pattern",
+]
