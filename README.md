@@ -1,61 +1,23 @@
-<div align="center">
-
 # nix
 
-**declarative configuration for my workstations**
+**declarative configuration for workstations**
 
 a reinstall should be `make switch`, not an afternoon of clicking through
 settings panes.
-
-[![flake check](https://github.com/levivannoort/nix/actions/workflows/flake-check.yaml/badge.svg)](https://github.com/levivannoort/nix/actions/workflows/flake-check.yaml)
-[![nixpkgs](https://img.shields.io/badge/nixpkgs-25.05-5277c3?logo=nixos&logoColor=white)](https://github.com/nixos/nixpkgs/tree/nixos-25.05)
-[![home-manager](https://img.shields.io/badge/home--manager-25.05-5277c3?logo=nixos&logoColor=white)](https://github.com/nix-community/home-manager/tree/release-25.05)
-
-</div>
 
 ---
 
 ## what this is
 
-three machines, one flake. [nix-darwin][nix-darwin] manages the two macbooks,
-[nixos][nixos] manages the vm, and [home-manager][hm] owns the user environment
+three machines, one flake. `nix-darwin` manages the two macbooks,
+`nixos` manages the vm, and `home-manager` owns the user environment
 on all of them, so the shell, editor and terminal are identical everywhere.
 
 | host       | platform         | role                     |
 | :--------- | :--------------- | :----------------------- |
 | `lpws`     | `aarch64-darwin` | personal laptop          |
 | `apws`     | `aarch64-darwin` | work laptop              |
-| `nixos-vm` | `aarch64-linux`  | throwaway vm for testing |
-
-## layout
-
-```
-flake.nix              inputs, plus the mkDarwin / mkNixos host builders
-flake.lock             pinned inputs, updated monthly by ci
-lib/                   importModules helper, enabled/disabled sugar
-statix.toml            lint rules this repo opts out of
-
-hosts/
-  lpws/                per-host divergence only: platform, hostname, extras
-  apws/
-  nixos-vm/            + hardware.nix, split out so it can be regenerated
-
-modules/
-  shared/              applies to every system: nix daemon, gc, caches
-  darwin/              nix-darwin: system defaults, homebrew, fonts, users
-  nixos/               nixos: networking, virtualisation, locale, users
-  home/
-    packages/          package lists, split by concern
-    programs/          one directory per program, auto imported
-```
-
-### why the platform split
-
-it is load bearing, not cosmetic. `virtualisation.*` exists only on nixos,
-`system.defaults.*` only on darwin, and `programs.git.extraConfig` only in
-home-manager. mixing all three in one tree means a module cannot be imported
-anywhere without breaking evaluation, which is exactly how the previous layout
-ended up with thirteen modules that were never imported by anything.
+| `vmte`     | `aarch64-linux`  | virtual machine          |
 
 ### adding things
 
@@ -173,21 +135,4 @@ config is well formed but not that every derivation compiles.
 
 **vagrant is linux only.** its ruby grpc dependency does not build on
 aarch64-darwin under nixpkgs 25.05, and vagrant on apple silicon has no usable
-provider regardless. use the `nixos-vm` host or plain qemu on macos.
-
-## ci
-
-| workflow                                   | trigger              | does                                          |
-| :----------------------------------------- | :------------------- | :-------------------------------------------- |
-| [`flake check`](.github/workflows/flake-check.yaml)   | push, pr             | format, lint, evaluate, then build every host |
-| [`flake update`](.github/workflows/flake-update.yaml) | monthly, manual      | bump `flake.lock` and open a pr               |
-
-the darwin hosts build on `macos-15` runners and the vm on `ubuntu-24.04-arm`,
-since a host can only be built on its own platform.
-
-<!-- links -->
-
-[nix-darwin]: https://github.com/nix-darwin/nix-darwin
-[nixos]: https://nixos.org
-[hm]: https://github.com/nix-community/home-manager
-[dsi]: https://github.com/DeterminateSystems/nix-installer
+provider regardless. use the `vmte` host or plain qemu on macos.

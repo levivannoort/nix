@@ -53,7 +53,7 @@ jobs:
         run: nix build ".#darwinConfigurations.${{ matrix.host }}.system" --show-trace
 
   build-nixos:
-    name: build nixos-vm
+    name: build vmte
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v5
@@ -63,5 +63,5 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
-      - name: build nixos-vm
-        run: nix build ".#nixosConfigurations.nixos-vm.config.system.build.toplevel" --show-trace
+      - name: build vmte
+        run: nix build ".#nixosConfigurations.vmte.config.system.build.toplevel" --show-trace
