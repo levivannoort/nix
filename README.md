@@ -1,17 +1,6 @@
-# nix
+## nix
 
-**declarative configuration for workstations**
-
-a reinstall should be `make switch`, not an afternoon of clicking through
-settings panes.
-
----
-
-## what this is
-
-three machines, one flake. `nix-darwin` manages the two macbooks,
-`nixos` manages the vm, and `home-manager` owns the user environment
-on all of them, so the shell, editor and terminal are identical everywhere.
+declarative configuration for workstations: three machines, one flake. `nix-darwin` manages the two macbooks, `nixos` manages the vm, and `home-manager` owns the user environment on all of them, so the shell, editor and terminal are identical everywhere.
 
 | host       | platform         | role                     |
 | :--------- | :--------------- | :----------------------- |
