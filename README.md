@@ -1,104 +1,191 @@
+<div align="center">
+
 # nix
 
-Declarative configuration for my workstations, so a reinstall is a `make switch`
-rather than an afternoon. Built on [nix-darwin][nix-darwin] for macOS,
-[NixOS][nixos] for Linux, and [home-manager][hm] for the user environment on
-both.
+**declarative configuration for my workstations**
 
-## Hosts
+a reinstall should be `make switch`, not an afternoon of clicking through
+settings panes.
 
-| Host       | Platform        | Role                          |
-| ---------- | --------------- | ----------------------------- |
-| `lpws`     | `aarch64-darwin`| Personal laptop               |
-| `apws`     | `aarch64-darwin`| Work laptop                   |
-| `nixos-vm` | `aarch64-linux` | Throwaway VM for testing      |
+[![flake check](https://github.com/levivannoort/nix/actions/workflows/flake-check.yaml/badge.svg)](https://github.com/levivannoort/nix/actions/workflows/flake-check.yaml)
+[![nixpkgs](https://img.shields.io/badge/nixpkgs-25.05-5277c3?logo=nixos&logoColor=white)](https://github.com/nixos/nixpkgs/tree/nixos-25.05)
+[![home-manager](https://img.shields.io/badge/home--manager-25.05-5277c3?logo=nixos&logoColor=white)](https://github.com/nix-community/home-manager/tree/release-25.05)
 
-## Layout
+</div>
+
+---
+
+## what this is
+
+three machines, one flake. [nix-darwin][nix-darwin] manages the two macbooks,
+[nixos][nixos] manages the vm, and [home-manager][hm] owns the user environment
+on all of them, so the shell, editor and terminal are identical everywhere.
+
+| host       | platform         | role                     |
+| :--------- | :--------------- | :----------------------- |
+| `lpws`     | `aarch64-darwin` | personal laptop          |
+| `apws`     | `aarch64-darwin` | work laptop              |
+| `nixos-vm` | `aarch64-linux`  | throwaway vm for testing |
+
+## layout
 
 ```
-flake.nix              inputs, and the mkDarwin/mkNixos host builders
-lib/                   importModules helper, enabled/disabled sugar, nixpkgs config
-hosts/<host>/          per-host divergence only: platform, hostname, extras
+flake.nix              inputs, plus the mkDarwin / mkNixos host builders
+flake.lock             pinned inputs, updated monthly by ci
+lib/                   importModules helper, enabled/disabled sugar
+statix.toml            lint rules this repo opts out of
+
+hosts/
+  lpws/                per-host divergence only: platform, hostname, extras
+  apws/
+  nixos-vm/            + hardware.nix, split out so it can be regenerated
+
 modules/
-  shared/              settings that apply to every system (nix daemon, gc, caches)
-  darwin/              nix-darwin options: system defaults, homebrew, fonts, users
-  nixos/               NixOS options: networking, virtualisation, locale, users
-  home/                home-manager: the user environment on every platform
+  shared/              applies to every system: nix daemon, gc, caches
+  darwin/              nix-darwin: system defaults, homebrew, fonts, users
+  nixos/               nixos: networking, virtualisation, locale, users
+  home/
     packages/          package lists, split by concern
-    programs/          one directory per program, auto-imported
+    programs/          one directory per program, auto imported
 ```
 
-The split by platform is load-bearing. `virtualisation.*` only exists on NixOS,
+### why the platform split
+
+it is load bearing, not cosmetic. `virtualisation.*` exists only on nixos,
 `system.defaults.*` only on darwin, and `programs.git.extraConfig` only in
-home-manager — mixing them in one tree means a module cannot be imported
-anywhere without breaking evaluation.
+home-manager. mixing all three in one tree means a module cannot be imported
+anywhere without breaking evaluation, which is exactly how the previous layout
+ended up with thirteen modules that were never imported by anything.
+
+### adding things
 
 `modules/{darwin,nixos}/default.nix` and `modules/home/default.nix` discover
-their children through `lib.importModules`, so adding a program is just adding
-`modules/home/programs/<name>/default.nix`. There is no import list to update.
-
-## Usage
+their children through `lib.importModules`, so a new program is just a new
+directory:
 
 ```sh
-make help      # list targets
-make build     # build this host without activating
-make switch    # build and activate
-make check     # evaluate every host in the flake
-make fmt       # format all Nix files
-make lint      # deadnix + statix
-make update    # bump flake inputs
-make gc        # collect garbage older than 30 days
+mkdir -p modules/home/programs/ripgrep
+$EDITOR modules/home/programs/ripgrep/default.nix
+```
+
+there is no import list to keep in sync. packages work the same way: drop them
+in the matching file under `modules/home/packages/`, or add a new file and
+reference it from that directory's `default.nix`.
+
+## usage
+
+```sh
+make help        # list every target
+make build       # build this host, do not activate
+make switch      # build and activate
+make check       # evaluate all three hosts
+make fmt         # format every nix file
+make fmt-check   # fail if anything is unformatted
+make lint        # deadnix and statix
+make update      # bump flake inputs, commit the lock
+make gc          # collect garbage older than 30 days
+make repl        # open a repl with the flake loaded
 ```
 
 `make` picks the host from `hostname -s`, so run it on the machine you are
-configuring or pass `HOSTNAME=` explicitly.
+configuring, or override it:
 
-## Bootstrapping a new machine
+```sh
+make build HOSTNAME=lpws
+```
 
-1. Install Nix — the [Determinate Systems installer][dsi] enables flakes out of
-   the box:
+## bootstrapping a new machine
 
-   ```sh
-   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-   ```
+<details>
+<summary><b>1. install nix</b></summary>
 
-2. Set the machine's hostname to match a host in `flake.nix`:
+the [determinate systems installer][dsi] enables flakes out of the box and
+uninstalls cleanly, which the upstream installer does not.
 
-   ```sh
-   sudo scutil --set ComputerName lpws
-   sudo scutil --set LocalHostName lpws
-   sudo scutil --set HostName lpws
-   ```
+```sh
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
 
-3. On macOS, install the Xcode command line tools and Homebrew — nix-darwin
-   drives Homebrew but does not install it:
+open a new shell afterwards so `nix` lands on your `PATH`.
 
-   ```sh
-   xcode-select --install
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   ```
+</details>
 
-4. Apply:
+<details>
+<summary><b>2. set the hostname to match a host in the flake</b></summary>
 
-   ```sh
-   git clone https://github.com/levivannoort/nix ~/personal/nix
-   cd ~/personal/nix
-   make switch
-   ```
+on macos all three of these matter, and they drift apart easily:
 
-   The first switch on macOS runs `nix run nix-darwin -- switch` because
-   `darwin-rebuild` does not exist yet; afterwards it is on `PATH`.
+```sh
+sudo scutil --set ComputerName lpws
+sudo scutil --set LocalHostName lpws
+sudo scutil --set HostName lpws
+```
 
-## Notes
+</details>
 
-- `homebrew.onActivation.cleanup` is `"none"`, so Homebrew is additive: casks
-  installed by hand are left alone. To make it fully declarative, reconcile
-  `modules/darwin/homebrew.nix` against `brew list` and then set it to
-  `"uninstall"` — the next switch removes everything not declared there.
-- Unfree packages (terraform, packer, vscode) resolve because
-  `modules/shared/nix.nix` sets `nixpkgs.config.allowUnfree`.
-- `home-manager` is pinned to `release-25.05` to match nixpkgs. Bump both
-  together or not at all.
+<details>
+<summary><b>3. install the macos prerequisites</b></summary>
+
+nix-darwin drives homebrew but does not install it, and the command line tools
+are needed before anything will compile.
+
+```sh
+xcode-select --install
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+</details>
+
+<details>
+<summary><b>4. apply</b></summary>
+
+```sh
+git clone git@github.com:levivannoort/nix.git ~/personal/nix
+cd ~/personal/nix
+make switch
+```
+
+on the first run `make switch` uses `nix run nix-darwin -- switch`, because
+`darwin-rebuild` does not exist yet. afterwards it is on your `PATH`.
+
+</details>
+
+## things worth knowing
+
+**homebrew is additive right now.** `homebrew.onActivation.cleanup` is `"none"`,
+so casks installed by hand are left alone. to make it fully declarative,
+reconcile `modules/darwin/homebrew.nix` against `brew list` first, then set it
+to `"uninstall"`. the next switch after that change removes every cask and
+formula not declared in the file.
+
+**unfree packages are allowed.** terraform, packer and vscode resolve because
+`modules/shared/nix.nix` sets `nixpkgs.config.allowUnfree`.
+
+**inputs move together.** home-manager is pinned to `release-25.05` to match
+nixpkgs. tracking home-manager master against a stable nixpkgs is the single
+most common source of evaluation breakage in a config like this, so bump both
+or neither.
+
+**`nix flake check` is the real gate.** the `checks` output evaluates all three
+hosts, which is what catches option names that were renamed or removed
+upstream. ci additionally builds each host, because evaluation proves the
+config is well formed but not that every derivation compiles.
+
+**vagrant is linux only.** its ruby grpc dependency does not build on
+aarch64-darwin under nixpkgs 25.05, and vagrant on apple silicon has no usable
+provider regardless. use the `nixos-vm` host or plain qemu on macos.
+
+## ci
+
+| workflow                                   | trigger              | does                                          |
+| :----------------------------------------- | :------------------- | :-------------------------------------------- |
+| [`flake check`](.github/workflows/flake-check.yaml)   | push, pr             | format, lint, evaluate, then build every host |
+| [`flake update`](.github/workflows/flake-update.yaml) | monthly, manual      | bump `flake.lock` and open a pr               |
+
+the darwin hosts build on `macos-15` runners and the vm on `ubuntu-24.04-arm`,
+since a host can only be built on its own platform.
+
+<!-- links -->
 
 [nix-darwin]: https://github.com/nix-darwin/nix-darwin
 [nixos]: https://nixos.org
