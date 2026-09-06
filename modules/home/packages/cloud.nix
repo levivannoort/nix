@@ -1,4 +1,4 @@
-# terraform and packer are BUSL-licensed and therefore unfree; they resolve
+# terraform and packer are busl-licensed and therefore unfree; they resolve
 # only because modules/shared/nix.nix sets nixpkgs.config.allowUnfree.
 { pkgs }:
 
@@ -9,4 +9,5 @@ with pkgs;
   terraform
   opentofu
   packer
+  doctl
 ]

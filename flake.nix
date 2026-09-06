@@ -98,6 +98,10 @@
     {
       inherit mylib;
 
+      # custom packages live in ./pkgs and are wired in through this overlay,
+      # which modules/shared/nix.nix applies to every host.
+      overlays.default = final: _prev: import ./pkgs final;
+
       darwinConfigurations = {
         lpws = mkDarwin "lpws";
         apws = mkDarwin "apws";

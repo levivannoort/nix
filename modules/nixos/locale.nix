@@ -7,7 +7,7 @@
   console.keyMap = "us";
 
   fonts.packages = with pkgs; [
-    nerd-fonts.jetbrains-mono
+    sf-mono-nerd-font
     nerd-fonts.symbols-only
   ];
 }

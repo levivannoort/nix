@@ -1,12 +1,11 @@
 { pkgs, ... }:
 
 {
-  # The old alacritty config asked for "SFMono Nerd Font", which is not
-  # packaged in nixpkgs (Apple does not redistribute SF Mono, and the patched
-  # build is not in nerd-fonts either). JetBrainsMono Nerd Font is the closest
-  # drop-in, and is what modules/home/programs/alacritty now references.
+  # sf-mono-nerd-font comes from the flake's overlay (see ./pkgs). ghostty asks
+  # for family "SFMono Nerd Font", which nixpkgs does not carry and homebrew
+  # only offers in a ligaturized variant.
   fonts.packages = with pkgs; [
-    nerd-fonts.jetbrains-mono
+    sf-mono-nerd-font
     nerd-fonts.symbols-only
   ];
 }

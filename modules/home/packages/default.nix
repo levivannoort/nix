@@ -8,3 +8,4 @@
 ++ (import ./languages.nix { inherit pkgs; })
 ++ (import ./virtualisation.nix { inherit pkgs; })
 ++ (import ./network.nix { inherit pkgs; })
+++ (import ./dev-tools.nix { inherit pkgs; })

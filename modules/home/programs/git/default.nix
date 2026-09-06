@@ -8,9 +8,10 @@
     userEmail = "73097785+levivannoort@users.noreply.github.com";
 
     # `init.defaultBranch` and `pull.rebase` are git config keys, not
-    # home-manager options — setting them at the top level of programs.git
-    # aborts evaluation. They belong in extraConfig.
+    # home-manager options: setting them at the top level of programs.git
+    # aborts evaluation. they belong in extraConfig.
     extraConfig = {
+      core.editor = "vim";
       init.defaultBranch = "main";
       pull.rebase = true;
       push.autoSetupRemote = true;
@@ -21,6 +22,9 @@
       merge.conflictstyle = "zdiff3";
       column.ui = "auto";
       branch.sort = "-committerdate";
+
+      # clone over https, push over ssh, without rewriting every remote.
+      url."git@github.com:".insteadOf = "https://github.com/";
     };
 
     aliases = {
@@ -32,6 +36,7 @@
       unstage = "restore --staged";
     };
 
+    # replaces core.excludesfile pointing at ~/.gitignore.
     ignores = [
       ".DS_Store"
       "result"

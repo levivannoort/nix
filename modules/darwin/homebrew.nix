@@ -19,7 +19,8 @@
     };
 
     casks = [
-      "alacritty"
+      "basictex"
+      "claude-code"
       "discord"
       # Renamed upstream from "docker"; ships compose, so no separate
       # docker-compose formula is needed. The old config listed
@@ -27,6 +28,7 @@
       "docker-desktop"
       "figma"
       "firefox"
+      "ghostty"
       "obsidian"
       "slack"
       "spotify"

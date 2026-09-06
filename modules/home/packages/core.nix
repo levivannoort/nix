@@ -1,4 +1,4 @@
-# Everyday CLI tooling.
+# everyday cli tooling.
 { pkgs }:
 
 with pkgs;
@@ -12,7 +12,7 @@ with pkgs;
   fd
   tree
   jq
-  # `yq` in nixpkgs is the Python wrapper; yq-go is the Go implementation that
+  # `yq` in nixpkgs is the python wrapper; yq-go is the go implementation that
   # matches the `yq` most people mean.
   yq-go
   bat
@@ -22,8 +22,13 @@ with pkgs;
   sqlite
   gh
   slides
+  lf
+  stow
+  pass
+  uv
+  hugo
 ]
 ++ lib.optionals stdenv.isLinux [
-  # procps provides `watch`; it is Linux-only, macOS ships its own.
+  # procps provides `watch`; macos ships its own.
   procps
 ]

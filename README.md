@@ -113,6 +113,18 @@ reconcile `modules/darwin/homebrew.nix` against `brew list` first, then set it
 to `"uninstall"`. the next switch after that change removes every cask and
 formula not declared in the file.
 
+**the terminal is ghostty.** `modules/home/programs/ghostty` writes
+`~/.config/ghostty/config` as a literal file rather than through
+`programs.ghostty`, because ghostty repeats the `palette` key sixteen times and
+a nix attrset cannot hold duplicate keys. the app itself comes from the
+homebrew cask so it lands in `/Applications` and can be pinned to the dock.
+
+**the font is built from source.** ghostty asks for `SFMono Nerd Font`. apple
+does not redistribute sf mono and nerd fonts ships no patched build, so there
+is no nixpkgs attribute and no homebrew cask (`brew search sf-mono` only offers
+a ligaturized variant). `pkgs/sf-mono-nerd-font` fetches the patched otf files
+and the flake overlay exposes them as `pkgs.sf-mono-nerd-font`.
+
 **unfree packages are allowed.** terraform, packer and vscode resolve because
 `modules/shared/nix.nix` sets `nixpkgs.config.allowUnfree`.
 
@@ -126,6 +138,41 @@ hosts, which is what catches option names that were renamed or removed
 upstream. ci additionally builds each host, because evaluation proves the
 config is well formed but not that every derivation compiles.
 
+**mise is gone.** it used to pin versions of go, terraform, kubectl, helm and
+twenty others that nix now owns. two version managers fighting over the same
+binaries is worse than either alone, so `flake.lock` is the single source of
+truth.
+
 **vagrant is linux only.** its ruby grpc dependency does not build on
 aarch64-darwin under nixpkgs 25.05, and vagrant on apple silicon has no usable
 provider regardless. use the `vmte` host or plain qemu on macos.
+
+## migrating from ~/.dotfiles
+
+the stow-based repo at `~/.dotfiles` is superseded by this one. what moved:
+
+| was | is now |
+| :-- | :----- |
+| `ghostty/.config/ghostty/config` | `modules/home/programs/ghostty` |
+| `zsh/.zshrc` prompt, aliases, exports, history | `modules/home/programs/zsh` |
+| `tmux/.tmux.conf` | `modules/home/programs/tmux` |
+| `git/.gitconfig`, `git/.gitignore` | `modules/home/programs/git` |
+| `k9s/.config/k9s` config, aliases, skin | `modules/home/programs/k9s` |
+| `fzf/.fzf.zsh` | `modules/home/programs/fzf` shell integration |
+| `osx/osx.zsh` defaults | `modules/darwin/system.nix` |
+| `brew/.config/brew/Brewfile` cli tools | `modules/home/packages/` |
+| `brew/.config/brew/Brewfile` casks | `modules/darwin/homebrew.nix` |
+| `mise/.config/mise/config.toml` | dropped, see above |
+| hand-installed `~/Library/Fonts` | `pkgs/sf-mono-nerd-font` |
+
+deliberately left behind, because none of it belongs in a public repo or in
+nix: the `pass` store and its private remote, `aws/template/config` (a
+placeholder, real profiles are machine-local), and the digital ocean kubectx
+script, which hardcodes cluster names.
+
+once `make switch` has run, unstow the old packages so the symlinks stop
+shadowing what home-manager writes:
+
+```sh
+stow --dir ~/.dotfiles --target ~ --delete brew git k9s osx tmux zsh fzf ghostty
+```

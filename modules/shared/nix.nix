@@ -1,4 +1,5 @@
 {
+  inputs,
   lib,
   mylib,
   user,
@@ -7,6 +8,7 @@
 
 {
   nixpkgs.config = mylib.nixpkgsConfig;
+  nixpkgs.overlays = [ inputs.self.overlays.default ];
 
   nix.settings = {
     experimental-features = [
