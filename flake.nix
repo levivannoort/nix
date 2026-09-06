@@ -104,7 +104,7 @@
       };
 
       nixosConfigurations = {
-        nixos-vm = mkNixos "nixos-vm";
+        vmte = mkNixos "vmte";
       };
 
       devShells = forAllSystems (pkgs: {

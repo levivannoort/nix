@@ -1,6 +1,9 @@
 ## nix
 
-declarative configuration for workstations: three machines, one flake. `nix-darwin` manages the two macbooks, `nixos` manages the vm, and `home-manager` owns the user environment on all of them, so the shell, editor and terminal are identical everywhere.
+declarative configuration for workstations: three machines, one flake.
+`nix-darwin` manages the two macbooks, `nixos` manages the vm, and
+`home-manager` owns the user environment on all of them, so the shell, editor
+and terminal are identical everywhere.
 
 | host       | platform         | role                     |
 | :--------- | :--------------- | :----------------------- |
@@ -8,7 +11,7 @@ declarative configuration for workstations: three machines, one flake. `nix-darw
 | `apws`     | `aarch64-darwin` | work laptop              |
 | `vmte`     | `aarch64-linux`  | virtual machine          |
 
-### adding things
+## adding things
 
 `modules/{darwin,nixos}/default.nix` and `modules/home/default.nix` discover
 their children through `lib.importModules`, so a new program is just a new
@@ -50,8 +53,9 @@ make build HOSTNAME=lpws
 <details>
 <summary><b>1. install nix</b></summary>
 
-the [determinate systems installer][dsi] enables flakes out of the box and
-uninstalls cleanly, which the upstream installer does not.
+the [determinate systems installer](https://github.com/DeterminateSystems/nix-installer)
+enables flakes out of the box and uninstalls cleanly, which the upstream
+installer does not.
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
